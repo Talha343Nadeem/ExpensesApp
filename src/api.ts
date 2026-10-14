@@ -1,4 +1,12 @@
-import type { Expense, Head, LimitWarning, MonthSummary, User } from './types'
+import type {
+  Debt,
+  DebtSummary,
+  Expense,
+  Head,
+  LimitWarning,
+  MonthSummary,
+  User,
+} from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -81,4 +89,48 @@ export const api = {
     }),
   deleteExpense: (id: string) =>
     request<{ ok: boolean }>(`/api/expenses/${id}`, { method: 'DELETE' }),
+  debts: (includeSettled = false) =>
+    request<{ debts: Debt[]; summary: DebtSummary }>(
+      `/api/debts?includeSettled=${includeSettled ? '1' : '0'}`,
+    ),
+  createDebt: (input: {
+    personName: string
+    direction: 'owed_to_me' | 'i_owe'
+    amount: number
+    description: string
+    note?: string | null
+    recordedOn?: string
+  }) =>
+    request<{ debt: Debt }>('/api/debts', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  addDebtItem: (
+    debtId: string,
+    input: { amount: number; description: string; recordedOn?: string },
+  ) =>
+    request<{ debt: Debt }>(`/api/debts/${debtId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  deleteDebtItem: (debtId: string, itemId: string) =>
+    request<{ ok: boolean; debt?: Debt; deletedDebt?: boolean }>(
+      `/api/debts/${debtId}/items/${itemId}`,
+      { method: 'DELETE' },
+    ),
+  updateDebt: (
+    id: string,
+    input: Partial<{
+      personName: string
+      direction: 'owed_to_me' | 'i_owe'
+      note: string | null
+      settled: boolean
+    }>,
+  ) =>
+    request<{ debt: Debt }>(`/api/debts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  deleteDebt: (id: string) =>
+    request<{ ok: boolean }>(`/api/debts/${id}`, { method: 'DELETE' }),
 }

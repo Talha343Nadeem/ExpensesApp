@@ -21,12 +21,15 @@ export function Layout() {
             </p>
             <p className="text-xs text-[var(--muted)]">{user?.email}</p>
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex flex-wrap items-center justify-end gap-1">
             <NavLink to="/" end className={linkClass}>
               Month
             </NavLink>
             <NavLink to="/heads" className={linkClass}>
               Heads
+            </NavLink>
+            <NavLink to="/owing" className={linkClass}>
+              Owing
             </NavLink>
             <button
               type="button"

@@ -57,3 +57,48 @@ CREATE TABLE IF NOT EXISTS limits (
 
 CREATE INDEX IF NOT EXISTS limits_user_id_idx ON limits(user_id);
 CREATE INDEX IF NOT EXISTS limits_head_id_idx ON limits(head_id);
+
+-- Money owed between people — not part of expense heads
+CREATE TABLE IF NOT EXISTS debts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  person_name TEXT NOT NULL,
+  direction TEXT NOT NULL CHECK (direction IN ('owed_to_me', 'i_owe')),
+  amount NUMERIC(12, 2),
+  note TEXT,
+  recorded_on DATE NOT NULL DEFAULT CURRENT_DATE,
+  settled_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT debts_person_not_blank CHECK (char_length(trim(person_name)) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS debts_user_id_idx ON debts(user_id);
+CREATE INDEX IF NOT EXISTS debts_open_idx ON debts(user_id, settled_at);
+
+-- Older installs required amount on debts; totals now come from debt_items
+ALTER TABLE debts ALTER COLUMN amount DROP NOT NULL;
+
+-- Multiple line items (amount + description) under one owed person
+CREATE TABLE IF NOT EXISTS debt_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  debt_id UUID NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+  description TEXT NOT NULL,
+  recorded_on DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT debt_items_description_not_blank CHECK (char_length(trim(description)) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS debt_items_debt_id_idx ON debt_items(debt_id);
+
+-- Existing single-amount debts become one line item
+INSERT INTO debt_items (debt_id, amount, description, recorded_on)
+SELECT
+  d.id,
+  d.amount,
+  COALESCE(NULLIF(trim(d.note), ''), 'Balance'),
+  d.recorded_on
+FROM debts d
+WHERE d.amount IS NOT NULL
+  AND d.amount > 0
+  AND NOT EXISTS (SELECT 1 FROM debt_items i WHERE i.debt_id = d.id);

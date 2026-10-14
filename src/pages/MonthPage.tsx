@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import { formatMoney, monthLabel, shiftMonth } from '../lib/format'
-import type { MonthSummary } from '../types'
+import type { DebtSummary, MonthSummary } from '../types'
 
 export function MonthPage() {
   const { user, setUser } = useAuth()
@@ -11,6 +11,7 @@ export function MonthPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [data, setData] = useState<MonthSummary | null>(null)
+  const [debtSummary, setDebtSummary] = useState<DebtSummary | null>(null)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [currencyDraft, setCurrencyDraft] = useState(user?.currencyCode ?? 'PKR')
@@ -19,8 +20,9 @@ export function MonthPage() {
   const load = useCallback(async () => {
     setError('')
     try {
-      const summary = await api.month(year, month)
+      const [summary, debts] = await Promise.all([api.month(year, month), api.debts(false)])
       setData(summary)
+      setDebtSummary(debts.summary)
       setCurrencyDraft(summary.currencyCode)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load month')
@@ -102,6 +104,21 @@ export function MonthPage() {
               {formatMoney(data?.monthTotal ?? 0, currency)}
             </p>
           </div>
+
+          <Link
+            to="/owing"
+            className="block rounded-2xl border border-[var(--line)] bg-[var(--paper)]/70 p-4 transition hover:border-[var(--accent)]"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-medium">Owing</p>
+              <span className="text-sm text-[var(--muted)]">Open →</span>
+            </div>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Owed to you {formatMoney(debtSummary?.owedToMe ?? 0, currency)}
+              {' · '}
+              You owe {formatMoney(debtSummary?.iOwe ?? 0, currency)}
+            </p>
+          </Link>
 
           <div className="space-y-2">
             {(data?.totals ?? []).map((total) => {

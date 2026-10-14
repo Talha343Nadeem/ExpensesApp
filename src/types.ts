@@ -68,3 +68,27 @@ export type MonthSummary = {
   limitProgress: LimitProgress[]
   limitsByHead: Record<string, LimitProgress[]>
 }
+
+export type DebtItem = {
+  id: string
+  amount: number
+  description: string
+  recordedOn: string
+}
+
+export type Debt = {
+  id: string
+  personName: string
+  direction: 'owed_to_me' | 'i_owe'
+  amount: number
+  note: string | null
+  recordedOn: string
+  settledAt: string | null
+  items: DebtItem[]
+}
+
+export type DebtSummary = {
+  owedToMe: number
+  iOwe: number
+  net: number
+}

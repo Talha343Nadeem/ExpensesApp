@@ -7,6 +7,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ensureSchema } from './db.ts'
 import { authRoutes } from './routes/auth.ts'
+import { debtsRoutes } from './routes/debts.ts'
 import { expensesRoutes } from './routes/expenses.ts'
 import { headsRoutes } from './routes/heads.ts'
 import { monthRoutes } from './routes/month.ts'
@@ -25,6 +26,7 @@ app.get('/api/health', (c) => c.json({ ok: true }))
 app.route('/api/auth', authRoutes)
 app.route('/api/heads', headsRoutes)
 app.route('/api/expenses', expensesRoutes)
+app.route('/api/debts', debtsRoutes)
 app.route('/api/month', monthRoutes)
 
 const distDir = join(process.cwd(), 'dist')

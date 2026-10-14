@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Layout } from './components/Layout'
 import { AuthPage } from './pages/AuthPage'
+import { DebtsPage } from './pages/DebtsPage'
 import { ExpenseFormPage } from './pages/ExpenseFormPage'
 import { HeadsPage } from './pages/HeadsPage'
 import { MonthPage } from './pages/MonthPage'
@@ -33,6 +34,7 @@ export default function App() {
           >
             <Route index element={<MonthPage />} />
             <Route path="heads" element={<HeadsPage />} />
+            <Route path="owing" element={<DebtsPage />} />
             <Route path="expenses/new" element={<ExpenseFormPage />} />
             <Route path="expenses/:id" element={<ExpenseFormPage />} />
           </Route>
